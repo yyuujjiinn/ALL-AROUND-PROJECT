@@ -11,6 +11,29 @@ if (!isset($_SESSION['user_id'])) {
 $uID = $_SESSION['user_id'];
 $uName = $_SESSION['user_name'];
 
+// ✅ HANDLE AJAX MARK AS READ
+if (isset($_POST['mark_read_id'])) {
+    $id = intval($_POST['mark_read_id']);
+    $conn->query("UPDATE notifications SET Status='Read' WHERE ID='$id' AND UserID='$uID'");
+    echo "success";
+    exit();
+}
+
+// ✅ DELETE SINGLE
+if (isset($_POST['delete_id'])) {
+    $id = intval($_POST['delete_id']);
+    $conn->query("DELETE FROM notifications WHERE ID='$id' AND UserID='$uID'");
+    echo "deleted";
+    exit();
+}
+
+// ✅ DELETE ALL
+if (isset($_POST['delete_all'])) {
+    $conn->query("DELETE FROM notifications WHERE UserID='$uID'");
+    echo "deleted_all";
+    exit();
+}
+
 // 2. FETCH Notifications
 $notifQuery = $conn->query("SELECT * FROM notifications WHERE UserID = '$uID' ORDER BY CreatedAt DESC LIMIT 5");
 
@@ -58,6 +81,17 @@ if ($role) {
         .badge-pending { background: #fff3cd; color: #856404; }
         .badge-returned { background: #d4edda; color: #155724; }
         .logout-btn { color: #dc3545; text-decoration: none; font-weight: bold; border: 1px solid #dc3545; padding: 8px 15px; border-radius: 5px; }
+
+        .btn-read {
+            background:#007bff; 
+            color:white; 
+            border:none; 
+            padding:5px 10px; 
+            border-radius:5px; 
+            cursor:pointer;
+            font-size: 0.85em;
+        }
+        .btn-read:hover { background:#0056b3; }
     </style>
 </head>
 <body>
@@ -114,10 +148,13 @@ if ($role) {
         </div>
 
         <div class="card">
-            <h3>Recent Notifications</h3>
+            <h3>Recent Notifications 
+                <span style="float:right; font-size:0.8em; color:red; cursor:pointer;" onclick="deleteAll()">Clear All</span>
+            </h3>
+
             <?php if ($notifQuery && $notifQuery->num_rows > 0): ?>
                 <?php while($n = $notifQuery->fetch_assoc()): ?>
-                    <div class="notif-item">
+                    <div class="notif-item" id="notif-<?= $n['ID'] ?>">
                         <div>
                             <p style="margin: 0; font-weight: 500;"><?= htmlspecialchars($n['Message']) ?></p>
                             <small style="color: gray;"><?= date('M d, Y', strtotime($n['CreatedAt'])) ?></small>
@@ -126,10 +163,13 @@ if ($role) {
                             <?php if ($n['Status'] == 'Read'): ?>
                                 <span class="status-read-text">✔ Read</span>
                             <?php else: ?>
-                                <label style="font-size: 0.85em; color: #666; cursor: pointer;">
-                                    <input type="checkbox" class="mark-read-cb" data-id="<?= $n['ID'] ?>"> Mark read
-                                </label>
+                                <button class="btn-read" onclick="markAsRead(<?= $n['ID'] ?>)">
+                                    Mark as Read
+                                </button>
                             <?php endif; ?>
+
+                            <!-- ✅ DELETE BUTTON -->
+                            <span style="color:red; cursor:pointer; font-size:0.8em;" onclick="deleteNotif(<?= $n['ID'] ?>)">Delete</span>
                         </div>
                     </div>
                 <?php endwhile; ?>
@@ -150,3 +190,64 @@ if ($role) {
 
         <div class="card">
             <h3>Profile Summary</h3>
+            <p><strong>Name:</strong> <?= htmlspecialchars($uName) ?></p>
+            <p><strong>Role:</strong> <span class="role-badge"><?= $displayRole ?></span></p>
+        </div>
+    </div>
+</div>
+
+<script>
+// MARK AS READ
+function markAsRead(id) {
+    fetch("", {
+        method: "POST",
+        headers: {"Content-Type": "application/x-www-form-urlencoded"},
+        body: "mark_read_id=" + id
+    })
+    .then(res => res.text())
+    .then(data => {
+        if (data === "success") {
+            document.getElementById("status-box-" + id).innerHTML =
+    '<span class="status-read-text">✔ Read</span> ' +
+    '<span style="color:red; cursor:pointer; font-size:0.8em;" onclick="deleteNotif(' + id + ')">Delete</span>';
+        }
+    });
+}
+
+// DELETE ONE
+function deleteNotif(id) {
+    if (!confirm("Delete this notification?")) return;
+
+    fetch("", {
+        method: "POST",
+        headers: {"Content-Type": "application/x-www-form-urlencoded"},
+        body: "delete_id=" + id
+    })
+    .then(res => res.text())
+    .then(data => {
+        if (data === "deleted") {
+            document.getElementById("notif-" + id).remove();
+        }
+    });
+}
+
+// DELETE ALL
+function deleteAll() {
+    if (!confirm("Delete all notifications?")) return;
+
+    fetch("", {
+        method: "POST",
+        headers: {"Content-Type": "application/x-www-form-urlencoded"},
+        body: "delete_all=1"
+    })
+    .then(res => res.text())
+    .then(data => {
+        if (data === "deleted_all") {
+            location.reload();
+        }
+    });
+}
+</script>
+
+</body>
+</html>
