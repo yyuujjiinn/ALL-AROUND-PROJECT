@@ -19,9 +19,19 @@
 
 <form method="POST" id="signupForm">
     <div class="form-group">
-        <label>Name:</label>
+        <label>First Name:</label>
         <input type="text" name="fname" required>
     </div>
+
+     <div class="form-group">
+        <label>Middle Name:</label>
+        <input type="text" name="mname" required>
+    </div>
+
+     <div class="form-group">
+            <label>Last Name:</label>
+            <input type="text" name="lname" required>
+        </div>
 
     <div class="form-group">
         <label>Email:</label>
@@ -32,7 +42,6 @@
         <label>Role:</label>
         <select name="role" id="roleSelect" required>
             <option value="">--Select Role--</option>
-            <option value="Admin">Admin</option>
             <option value="Staff">Staff</option>
             <option value="Faculty">Faculty</option>
             <option value="Student">Student</option>
@@ -89,7 +98,9 @@ include 'connect.php';
 
 if (isset($_POST['signup'])) {
     // Sanitize basic inputs
-    $name = mysqli_real_escape_string($conn, $_POST['fname']);   
+    $fname = mysqli_real_escape_string($conn, $_POST['fname']);   
+    $mname = mysqli_real_escape_string($conn, $_POST['mname']);   
+    $lname = mysqli_real_escape_string($conn, $_POST['lname']);   
     $email = mysqli_real_escape_string($conn, $_POST['email']); 
     $pword = $_POST['password']; 
     $role = $_POST['role'];
@@ -105,21 +116,20 @@ if (isset($_POST['signup'])) {
     }
 
     // 1. Insert into main 'user' table
-    $sql = "INSERT INTO user (Name, Email, Password, CourseID) 
-            VALUES ('$name', '$email', '$pword', '$cID')";
+    $sql = "INSERT INTO user (FirstName, MiddleName, LastName, Email, Password, CourseID) 
+            VALUES ('$fname', '$mname', '$lname', '$email', '$pword', '$cID')";
 
     if ($conn->query($sql) === TRUE) {
         $generatedID = $conn->insert_id; // Get the auto-incremented RoleID
 
         // 2. Map the selection to the correct column in 'user_roles'
         $student = ($role == 'Student') ? $generatedID : 0;
-        $admin   = ($role == 'Admin')   ? $generatedID : 0;
         $visitor  = ($role == 'Visitor')   ? $generatedID : 0;
         $staff   = ($role == 'Staff')   ? $generatedID : 0;
         $faculty = ($role == 'Faculty') ? $generatedID : 0;
 
-        $roleSql = "INSERT INTO user_roles (RoleID, StudentID, AdminID, VisitorID, StaffID, FacultyID) 
-                    VALUES ('$generatedID', '$student', '$admin', '$visitor', '$staff', '$faculty')";
+        $roleSql = "INSERT INTO user_roles (RoleID, StudentID, VisitorID, StaffID, FacultyID) 
+                    VALUES ('$generatedID', '$student', '$visitor', '$staff', '$faculty')";
         
         if ($conn->query($roleSql) === TRUE) {
             echo "<script>alert('Registered successfully! Your Login ID is $generatedID'); window.location='index.php';</script>";
