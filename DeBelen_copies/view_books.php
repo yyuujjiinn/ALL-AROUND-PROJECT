@@ -55,6 +55,7 @@ $result = $conn->query($sql);
                 <th>Publisher</th>
                 <th>Availability</th>
                 <th>Action</th>
+                <th>QR Code</th>
             </tr>
         </thead>
         <tbody>
@@ -87,6 +88,9 @@ $result = $conn->query($sql);
                     <?php else: ?>
                         <button disabled>Unavailable</button>
                     <?php endif; ?>
+                </td>
+                <td>
+                    <img src="generate_qr.php?id=<?= $row['BookID'] ?>" width="80" height="80" alt="QR Code">
                 </td>
             </tr>
             <?php endwhile; ?>
