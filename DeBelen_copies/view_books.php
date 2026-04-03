@@ -81,13 +81,37 @@ $result = $conn->query($sql);
                     <?php endif; ?>
                 </td>
                 <td>
-                    <?php if($role['VisitorID'] != 0): ?>
-                        <small>View Only</small>
-                    <?php elseif($row['Quantity'] > 0): ?>
-                        <a href="borrow_process.php?id=<?= $row['BookID'] ?>" class="btn-borrow">Request Borrow</a>
-                    <?php else: ?>
-                        <button disabled>Unavailable</button>
-                    <?php endif; ?>
+                   <?php
+if ($role['VisitorID'] != 0) {
+    // Visitor: check if they already have a request for this book
+    $borrowCheck = $conn->query("
+        SELECT Status FROM borrow 
+        WHERE UserID='$uID' AND BookID='{$row['BookID']}' 
+        ORDER BY BorrowID DESC LIMIT 1
+    ");
+    $borrowStatus = $borrowCheck->fetch_assoc()['Status'] ?? null;
+
+    if (!$borrowStatus) {
+        // No request yet
+        echo '<a href="borrow_process.php?id=' . $row['BookID'] . '" class="btn-borrow">Request Borrow</a>';
+    } elseif ($borrowStatus == 'Pending') {
+        echo '<small>Pending</small>';
+    } elseif ($borrowStatus == 'Approved') {
+        echo '<a href="borrow_confirm.php?id=' . $row['BookID'] . '" class="btn-borrow">Confirm Borrow</a>';
+    } elseif ($borrowStatus == 'Borrowed') {
+        echo '<small>Borrowed</small>';
+    } elseif ($borrowStatus == 'Rejected') {
+        echo '<small>Rejected</small>';
+    }
+} else {
+    // Student/Faculty
+    if ($row['Quantity'] > 0) {
+        echo '<a href="borrow_process.php?id=' . $row['BookID'] . '" class="btn-borrow">Request Borrow</a>';
+    } else {
+        echo '<button disabled>Unavailable</button>';
+    }
+}
+?>
                 </td>
                 <td>
                     <img src="generate_qr.php?id=<?= $row['BookID'] ?>" width="80" height="80" alt="QR Code">
