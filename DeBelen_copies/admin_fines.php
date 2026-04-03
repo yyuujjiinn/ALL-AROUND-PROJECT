@@ -56,15 +56,25 @@ if ($fines->num_rows > 0) {
         ?>
             <!-- Update form -->
             <form method="post" action="update_fine.php" style="display:inline;">
-                <input type="hidden" name="fineID" value="<?php echo $f['FineID']; ?>">
-                <select name="status">
-                    <option value="update">-Update-</option>
-                    <option value="Unpaid">Unpaid</option>
-                    <option value="Pending Replacement">Pending Replacement</option>
-                    <option value="Paid">Paid</option>
-                </select>
-                <button type="submit">Update</button>
-            </form>
+            <input type="hidden" name="fineID" value="<?php echo $f['FineID']; ?>">
+            <select name="status">
+            <option value="update">-Update-</option>
+            <?php
+            if ($f['Type'] === "Overdue") {
+                echo '<option value="Unpaid">Unpaid</option>';
+                echo '<option value="Paid">Paid</option>';
+            } elseif ($f['Type'] === "Missing") {
+                echo '<option value="Unpaid">Unpaid</option>';
+                echo '<option value="Pending Replacement">Pending Replacement</option>';
+                echo '<option value="Paid">Paid</option>';
+                echo '<option value="Replaced">Replaced</option>';
+            }
+        ?>
+    </select>
+    <button type="submit">Update</button>
+    </form>
+
+
 
             <!-- Delete form -->
             <form method="post" action="delete_fine.php" style="display:inline; margin-left:5px;">
