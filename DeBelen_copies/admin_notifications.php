@@ -31,8 +31,8 @@ if (isset($_POST['send_notif'])) {
 }
 
 // 3. FETCH DATA
-$users = $conn->query("SELECT RoleID, Name FROM user WHERE RoleID != '$uID'");
-$history = $conn->query("SELECT n.*, u.Name FROM notifications n JOIN user u ON n.UserID = u.RoleID ORDER BY n.CreatedAt DESC");
+$users = $conn->query("SELECT RoleID, CONCAT(firstname, ' ', middlename, ' ', lastname) AS Name FROM user WHERE RoleID != '$uID'");
+$history = $conn->query("SELECT n.*, CONCAT(u.firstname, ' ', u.middlename, ' ', u.lastname) AS Name FROM notifications n JOIN user u ON n.UserID = u.RoleID ORDER BY n.CreatedAt DESC");
 ?>
 
 <!DOCTYPE html>
