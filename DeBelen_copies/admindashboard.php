@@ -2,15 +2,25 @@
 session_start();
 include 'connect.php';
 
-// Security check
+// 1. Admin Security Check
 if (!isset($_SESSION['user_id'])) {
     header("Location: index.php");
     exit();
 }
 
 $uID = $_SESSION['user_id'];
-$uName = $_SESSION['user_name'];
+$uName = $_SESSION['user_name'] ?? '';
 
+if (empty($uName)) {
+    $nameQuery = $conn->query("SELECT FirstName, MiddleName, LastName FROM user WHERE RoleID = '$uID'");
+    if ($nameQuery && $nameQuery->num_rows > 0) {
+        $nameRow = $nameQuery->fetch_assoc();
+        $uName = trim($nameRow['FirstName'] . ' ' . (!empty($nameRow['MiddleName']) ? $nameRow['MiddleName'] . ' ' : '') . $nameRow['LastName']);
+        $_SESSION['user_name'] = $uName;
+    }
+}
+
+// Check if the user is actually an admin
 $adminCheck = $conn->query("SELECT AdminID FROM user_roles WHERE RoleID = '$uID'");
 $isAdmin = $adminCheck->fetch_assoc();
 
@@ -19,19 +29,21 @@ if (!$isAdmin || $isAdmin['AdminID'] == 0) {
     exit();
 }
 
-// Default stats
+// 2. Fetch Stats for the Dashboard
 $totalBooks = $conn->query("SELECT SUM(Quantity) as total FROM books")->fetch_assoc();
 $totalUsers = $conn->query("SELECT COUNT(*) as total FROM user")->fetch_assoc();
 $pendingReturns = $conn->query("SELECT COUNT(*) as total FROM borrow WHERE Status = 'Borrowed'")->fetch_assoc();
 $unreadNotifs = $conn->query("SELECT COUNT(*) as total FROM notifications WHERE Status = 'Unread'")->fetch_assoc();
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard - Library System</title>
     <style>
-         :root {
+        :root {
             --primary: #007bff;
             --success: #28a745;
             --warning: #ffc107;
@@ -49,7 +61,7 @@ $unreadNotifs = $conn->query("SELECT COUNT(*) as total FROM notifications WHERE 
             color: #333;
         }
 
-         .container { max-width: 1200px; margin: auto; }
+        .container { max-width: 1200px; margin: auto; }
 
         .header { 
             background: var(--dark); 
@@ -74,7 +86,6 @@ $unreadNotifs = $conn->query("SELECT COUNT(*) as total FROM notifications WHERE 
             font-weight: bold; 
             transition: 0.3s;
         }
-
         .logout-btn:hover { background: #bd2130; transform: scale(1.05); }
 
         /* Stats Section */
@@ -94,7 +105,7 @@ $unreadNotifs = $conn->query("SELECT COUNT(*) as total FROM notifications WHERE 
             border-bottom: 4px solid var(--primary);
         }
 
-          .stat-card p { margin: 0; color: #666; font-weight: 600; text-transform: uppercase; font-size: 0.8em; }
+        .stat-card p { margin: 0; color: #666; font-weight: 600; text-transform: uppercase; font-size: 0.8em; }
         .stat-card h2 { margin: 10px 0 0; font-size: 2.2em; color: var(--dark); }
 
         /* Menu Section */
@@ -142,6 +153,7 @@ $unreadNotifs = $conn->query("SELECT COUNT(*) as total FROM notifications WHERE 
     </style>
 </head>
 <body>
+
 <div class="container">
     <div class="header">
         <div>
@@ -151,68 +163,64 @@ $unreadNotifs = $conn->query("SELECT COUNT(*) as total FROM notifications WHERE 
         <a href="logout.php" class="logout-btn">Logout System</a>
     </div>
 
-    <!-- Search Bar with dropdown -->
-    <div style="margin:20px 0; position:relative; max-width:1176px;">
-        <input type="text" id="searchBox" placeholder="Search across dashboard..." 
-               style="width:100%; padding:10px; border-radius:8px; border:1px solid #ccc;">
-               
-        <!-- Dropdown results -->
-        <div id="results" 
-             style="position:absolute; top:100%; left:0; right:0; background:#fff; border:1px solid #ccc; border-radius:0 0 8px 8px; max-height:500px; overflow-y:auto; display:none; z-index:1000;">
+    <div class="stats-grid">
+        <div class="stat-card">
+            <p>Total Books</p>
+            <h2><?php echo number_format($totalBooks['total'] ?? 0); ?></h2>
+        </div>
+        <div class="stat-card" style="border-bottom-color: #17a2b8;">
+            <p>Registered Users</p>
+            <h2><?php echo $totalUsers['total']; ?></h2>
+        </div>
+        <div class="stat-card" style="border-bottom-color: var(--success);">
+            <p>Active Borrows</p>
+            <h2><?php echo $pendingReturns['total']; ?></h2>
+        </div>
+        <div class="stat-card" style="border-bottom-color: var(--warning);">
+            <p>Unread Notices</p>
+            <h2><?php echo $unreadNotifs['total']; ?></h2>
         </div>
     </div>
 
-    <!-- Stats -->
-    <div class="stats-grid">
-        <div class="stat-card"><p>Total Books</p><h2><?php echo number_format($totalBooks['total'] ?? 0); ?></h2></div>
-        <div class="stat-card" style="border-bottom-color: #17a2b8;"><p>Registered Users</p><h2><?php echo $totalUsers['total']; ?></h2></div>
-        <div class="stat-card" style="border-bottom-color: var(--success);"><p>Active Borrows</p><h2><?php echo $pendingReturns['total']; ?></h2></div>
-        <div class="stat-card" style="border-bottom-color: var(--warning);"><p>Unread Notices</p><h2><?php echo $unreadNotifs['total']; ?></h2></div>
-    </div>
-
-    <!-- Menu -->
     <div class="menu-grid">
-        <a href="book.php" class="menu-card card-books"><h3>📚 Book Management</h3><p>Inventory control...</p></a>
-        <a href="materials_catalog.php" class="menu-card card-materials"><h3>🧰 Materials Management</h3><p>Handle non-book...</p></a>
-        <a href="admin_notifications.php" class="menu-card card-notif"><h3>📣 Notification Center</h3><p>Send announcements...</p></a>
-        <a href="borrow_records.php" class="menu-card card-records"><h3>📝 Borrowing Records</h3><p>Track borrows...</p></a>
-        <a href="manage_users.php" class="menu-card card-users"><h3>👥 User Management</h3><p>Monitor accounts...</p></a>
-        <a href="admin_fines.php" class="menu-card card-fines"><h3>💰 Fine Management</h3><p>View penalties...</p></a>
-        <a href="archive.php" class="menu-card card-archive"><h3>📂 Archive & Recovery</h3><p>Restore deleted...</p></a>
+        
+        <a href="book.php" class="menu-card card-books">
+            <h3>📚 Book Management</h3>
+            <p>Inventory control: Add, Edit, Delete, or Archive library books.</p>
+        </a>
+
+        <a href="materials_catalog.php" class="menu-card card-materials">
+            <h3>🧰 Materials Management</h3>
+            <p>Handle non-book resources like magazines, research papers, and equipment.</p>
+        </a>
+
+        <a href="admin_notifications.php" class="menu-card card-notif">
+            <h3>📣 Notification Center</h3>
+            <p>Send announcements or overdue reminders to specific students/faculty.</p>
+        </a>
+
+        <a href="borrow_records.php" class="menu-card card-records">
+            <h3>📝 Borrowing Records</h3>
+            <p>Track who borrowed what, manage due dates, and process returns.</p>
+        </a>
+
+        <a href="manage_users.php" class="menu-card card-users">
+            <h3>👥 User Management</h3>
+            <p>Monitor user accounts, verify registrations, and assign roles.</p>
+        </a>
+
+        <a href="admin_fines.php" class="menu-card card-fines">
+            <h3>💰 Fine Management</h3>
+            <p>View penalties for overdue books and record payment transactions.</p>
+        </a>
+
+        <a href="archive.php" class="menu-card card-archive">
+            <h3>📂 Archive & Recovery</h3>
+            <p>Restore accidentally deleted books or view historical inventory records.</p>
+        </a>
+
     </div>
 </div>
 
-<script>
-const searchBox = document.getElementById("searchBox");
-const resultsDiv = document.getElementById("results");
-
-searchBox.addEventListener("keyup", function() {
-    let query = this.value;
-
-    if(query.length === 0){
-        resultsDiv.style.display = "none";
-        resultsDiv.innerHTML = "";
-        return;
-    }
-
-    let xhr = new XMLHttpRequest();
-    xhr.open("POST", "search_dashboard.php", true);
-    xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-    xhr.onload = function() {
-        if (xhr.status === 200) {
-            resultsDiv.innerHTML = xhr.responseText;
-            resultsDiv.style.display = "block";
-        }
-    };
-    xhr.send("search=" + encodeURIComponent(query));
-});
-
-// Hide dropdown when clicking outside
-document.addEventListener("click", function(e){
-    if(!searchBox.contains(e.target) && !resultsDiv.contains(e.target)){
-        resultsDiv.style.display = "none";
-    }
-});
-</script>
 </body>
 </html>
