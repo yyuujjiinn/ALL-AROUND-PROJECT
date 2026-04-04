@@ -219,6 +219,11 @@ $unreadNotifs = $conn->query("SELECT COUNT(*) as total FROM notifications WHERE 
             <p>Restore accidentally deleted books or view historical inventory records.</p>
         </a>
 
+        <a href="admin_reservations.php" class="menu-card card-res">
+            <h3>📅 Reservations</h3>
+            <p>View students waiting for out-of-stock books.</p>
+        </a>
+
     </div>
 </div>
 
