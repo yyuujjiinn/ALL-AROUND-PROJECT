@@ -51,31 +51,33 @@ if (isset($_POST['login'])) {
     // 1. Check if the user exists
     $sql = "SELECT * FROM user WHERE Email='$email' AND Password='$password'";
     $result = $conn->query($sql);
+if ($result->num_rows > 0) {
+    $row = $result->fetch_assoc();
+    $uID = $row['RoleID'];
+    
+    $_SESSION['user_id'] = $uID;
+    
+    // PAGSAMAHIN ANG FIRST, MIDDLE, AT LAST NAME DAHIL WALANG "NAME" COLUMN
+    $_SESSION['user_name'] = trim($row['FirstName'] . ' ' . (!empty($row['MiddleName']) ? $row['MiddleName'] . ' ' : '') . $row['LastName']);
 
-    if ($result->num_rows > 0) {
-        $row = $result->fetch_assoc();
-        $uID = $row['RoleID'];
-        
-        $_SESSION['user_id'] = $uID; 
-        $_SESSION['user_name'] = $row['Name'];
+    // Check the user_roles table
+    $roleCheck = $conn->query("SELECT * FROM user_roles WHERE RoleID = '$uID'");
+    $roleData = $roleCheck->fetch_assoc();
 
-        // 2. Check the user_roles table to see if they are an Admin
-        $roleCheck = $conn->query("SELECT AdminID FROM user_roles WHERE RoleID = '$uID'");
-        $roleData = $roleCheck->fetch_assoc();
-
-        // 3. Redirect based on Role
-        if ($roleData && $roleData['AdminID'] != 0) {
-            // It's an Admin!
-            header("Location: admindashboard.php");
-        } else {
-            // It's a Student/Guest/Staff/Faculty (Regular User)
-            header("Location: userdashboard.php");
-        }
-        exit();
+    // I-set ang Role Name sa session para rekta na sa dashboard
+    if ($roleData['AdminID'] != 0) {
+        $_SESSION['user_role'] = "Administrator";
+        header("Location: admindashboard.php");
     } else {
-        echo "<script>alert('Invalid email or password'); window.location='index.php';</script>";
+        $_SESSION['user_role'] = "Student"; // O i-check ang ibang IDs (Faculty, Staff)
+        header("Location: userdashboard.php");
     }
+    exit();
+} else {
+    echo "<script>alert('Invalid email or password!');</script>";
 }
+}
+
 ?>
      
 </body>
