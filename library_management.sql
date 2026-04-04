@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Mar 25, 2026 at 03:03 PM
+-- Generation Time: Apr 04, 2026 at 10:50 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -37,7 +37,9 @@ CREATE TABLE `authors` (
 --
 
 INSERT INTO `authors` (`AuthorID`, `AuthorName`) VALUES
-(1, 'Rizal');
+(1, 'Rizal'),
+(2, 'Jose Rizal'),
+(3, 'JK Rowling');
 
 -- --------------------------------------------------------
 
@@ -58,7 +60,8 @@ CREATE TABLE `books` (
 --
 
 INSERT INTO `books` (`BookID`, `BookTitle`, `CategoryID`, `PublisherId`, `Quantity`) VALUES
-(2, 'Noli', 1, 1, 1);
+(3, 'El Filibusterismo', 2, 2, 0),
+(4, 'Harry Potter', 3, 3, 7);
 
 -- --------------------------------------------------------
 
@@ -76,6 +79,13 @@ CREATE TABLE `book_archive` (
   `DeletedAt` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `book_archive`
+--
+
+INSERT INTO `book_archive` (`ArchiveID`, `BookID`, `BookTitle`, `CategoryID`, `PublisherId`, `Quantity`, `DeletedAt`) VALUES
+(8, 2, 'Noli', 1, 1, 2, '2026-03-31 01:38:14');
+
 -- --------------------------------------------------------
 
 --
@@ -86,6 +96,14 @@ CREATE TABLE `book_authors` (
   `BookID` int(50) NOT NULL,
   `AuthorID` int(50) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `book_authors`
+--
+
+INSERT INTO `book_authors` (`BookID`, `AuthorID`) VALUES
+(3, 2),
+(4, 3);
 
 -- --------------------------------------------------------
 
@@ -106,7 +124,7 @@ CREATE TABLE `book_copies` (
 --
 
 CREATE TABLE `borrow` (
-  `BorrowID` int(50) NOT NULL,
+  `BorrowID` int(11) NOT NULL,
   `UserID` int(50) NOT NULL,
   `BookID` int(50) NOT NULL,
   `BorrowDate` date NOT NULL,
@@ -114,6 +132,22 @@ CREATE TABLE `borrow` (
   `Returndate` date NOT NULL,
   `Status` varchar(10) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `borrow`
+--
+
+INSERT INTO `borrow` (`BorrowID`, `UserID`, `BookID`, `BorrowDate`, `DueDate`, `Returndate`, `Status`) VALUES
+(1, 16, 2, '2026-03-30', '2026-02-20', '2026-03-30', 'Returned'),
+(2, 17, 2, '2026-03-30', '2026-02-20', '2026-03-30', 'Returned'),
+(3, 20, 3, '2026-03-30', '2026-04-06', '0000-00-00', 'Borrowed'),
+(4, 21, 3, '2026-03-31', '2026-04-07', '2026-03-31', 'Returned'),
+(5, 1, 5, '2026-03-26', '2026-03-29', '0000-00-00', 'Borrowed'),
+(6, 22, 3, '2026-03-31', '2026-04-07', '0000-00-00', 'Borrowed'),
+(7, 9, 3, '2026-04-04', '2026-04-11', '0000-00-00', 'Borrowed'),
+(8, 20, 3, '2026-04-04', '2026-04-11', '0000-00-00', 'Borrowed'),
+(9, 15, 3, '2026-04-04', '2026-04-11', '0000-00-00', 'Borrowed'),
+(10, 15, 3, '2026-04-04', '2026-04-11', '0000-00-00', 'Borrowed');
 
 -- --------------------------------------------------------
 
@@ -131,7 +165,9 @@ CREATE TABLE `categories` (
 --
 
 INSERT INTO `categories` (`CategoryID`, `CategoryName`) VALUES
-(1, 'History');
+(1, 'History'),
+(2, 'Novel'),
+(3, 'Story Book');
 
 -- --------------------------------------------------------
 
@@ -147,16 +183,23 @@ CREATE TABLE `course` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `fine`
+-- Table structure for table `fines`
 --
 
-CREATE TABLE `fine` (
-  `FineID` int(50) NOT NULL,
-  `BorrowID` int(50) NOT NULL,
-  `Amount` int(20) NOT NULL,
-  `PaidStatus` varchar(10) NOT NULL,
-  `DateIssued` date NOT NULL
+CREATE TABLE `fines` (
+  `FineID` int(11) NOT NULL,
+  `BorrowID` int(11) NOT NULL,
+  `Type` varchar(50) DEFAULT NULL,
+  `Amount` decimal(10,2) DEFAULT NULL,
+  `Status` varchar(20) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `fines`
+--
+
+INSERT INTO `fines` (`FineID`, `BorrowID`, `Type`, `Amount`, `Status`) VALUES
+(1, 2, 'Overdue', 189.79, 'Unpaid');
 
 -- --------------------------------------------------------
 
@@ -210,7 +253,15 @@ INSERT INTO `notifications` (`ID`, `UserID`, `Message`, `Status`, `CreatedAt`) V
 (2, 9, 'he', 'Read', '2026-03-25 10:56:13'),
 (3, 9, 'tt', 'Read', '2026-03-25 11:03:44'),
 (4, 9, '123', 'Read', '2026-03-25 11:07:43'),
-(5, 9, 'Burat', 'Read', '2026-03-25 12:12:12');
+(5, 9, 'Burat', 'Read', '2026-03-25 12:12:12'),
+(6, 16, 'You successfully borrowed a book. Please return it by 2026-04-06', 'Read', '2026-03-29 23:33:40'),
+(7, 17, 'You successfully borrowed a book. Please return it by 2026-04-06', 'Read', '2026-03-30 01:24:54'),
+(8, 20, 'You successfully borrowed a book. Please return it by 2026-04-06', 'Unread', '2026-03-30 11:38:09'),
+(9, 21, 'You successfully borrowed a book. Please return it by 2026-04-07', 'Unread', '2026-03-31 01:40:10'),
+(11, 9, 'You successfully borrowed a book. Please return it by 2026-04-11', 'Read', '2026-04-04 08:02:04'),
+(12, 20, 'You successfully borrowed a book. Please return it by 2026-04-11', 'Unread', '2026-04-04 08:30:46'),
+(13, 15, 'You successfully borrowed a book. Please return it by 2026-04-11', 'Unread', '2026-04-04 08:31:35'),
+(14, 15, 'You successfully borrowed a book. Please return it by 2026-04-11', 'Unread', '2026-04-04 08:31:43');
 
 -- --------------------------------------------------------
 
@@ -228,7 +279,31 @@ CREATE TABLE `publisher` (
 --
 
 INSERT INTO `publisher` (`PublisherID`, `PublisherName`) VALUES
-(1, 'Liwayway');
+(1, 'Liwayway'),
+(2, 'Eliazha Pasion'),
+(3, 'PIa De Belen');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `reservations`
+--
+
+CREATE TABLE `reservations` (
+  `ReservationID` int(11) NOT NULL,
+  `UserID` int(50) NOT NULL,
+  `BookID` int(50) NOT NULL,
+  `ReservationDate` timestamp NOT NULL DEFAULT current_timestamp(),
+  `Status` varchar(20) DEFAULT 'Pending'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `reservations`
+--
+
+INSERT INTO `reservations` (`ReservationID`, `UserID`, `BookID`, `ReservationDate`, `Status`) VALUES
+(1, 15, 3, '2026-04-04 08:31:54', 'Pending'),
+(2, 18, 3, '2026-04-04 08:33:23', 'Pending');
 
 -- --------------------------------------------------------
 
@@ -238,22 +313,35 @@ INSERT INTO `publisher` (`PublisherID`, `PublisherName`) VALUES
 
 CREATE TABLE `user` (
   `RoleID` int(50) NOT NULL,
-  `Name` varchar(100) NOT NULL,
+  `FirstName` varchar(100) NOT NULL,
   `Email` varchar(100) NOT NULL,
   `Password` varchar(20) NOT NULL,
-  `CourseID` int(50) NOT NULL
+  `CourseID` int(50) NOT NULL,
+  `MiddleName` varchar(100) NOT NULL,
+  `LastName` varchar(100) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `user`
 --
 
-INSERT INTO `user` (`RoleID`, `Name`, `Email`, `Password`, `CourseID`) VALUES
-(9, 'Yujin', 'jinyu3097@gmail.com', '123', 123),
-(10, 'Pasion', 'manubayeugene35@gmail.com', '123', 123),
-(11, 'Russel', 'burat@gmail.com', '123', 0),
-(12, 'Ash', 'tite@gmail.com', '123', 0),
-(13, 'Mica', 'tite1@gmail.com', '123', 123);
+INSERT INTO `user` (`RoleID`, `FirstName`, `Email`, `Password`, `CourseID`, `MiddleName`, `LastName`) VALUES
+(9, 'Raejz Eugene', 'jinyu3097@gmail.com', '123', 123, '', 'Manubay'),
+(10, 'Pasion', 'manubayeugene35@gmail.com', '123', 123, '', ''),
+(11, 'Russel', 'burat@gmail.com', '123', 0, '', ''),
+(12, 'Ash', 'tite@gmail.com', '123', 0, '', ''),
+(13, 'Mica', 'tite1@gmail.com', '123', 123, '', ''),
+(14, 'Pia De Belen', 'debelenpiaangellie4@gmail.com', 'PiaDeBelen', 2024100588, '', ''),
+(15, 'AllyaDeBelen', 'allyatherese@gmail.com', 'allyathererse', 2024100589, '', ''),
+(16, 'Allya De Belen', 'allyatheresedebelen@gmail.com', 'allyatherese', 2024100589, '', ''),
+(17, 'Nina Castillo', 'NinaMariaeCastillo@gmail.com', 'NinaCas', 2024100580, '', ''),
+(18, 'BunBun Bigalo', 'BunBunBigalo@gmail.com', 'CuteBunBun', 2024100589, '', ''),
+(19, 'Leonora D. De Belen', 'LeonoraDeBelen@gmail.com', 'LDB', 0, '', ''),
+(20, 'Neil De Belen', 'NeilDeBelen@gmail.com', 'ndb', 2024100581, '', ''),
+(21, 'Diana Jav', 'DianaJav@gmail.com', 'daj', 0, '', ''),
+(22, 'Irish A. Javier', 'IrishJavier@gmail.com', 'rishi', 0, '', ''),
+(23, 'Trixia Mae A. Javier', 'TrixiaJavier@gmail.com', 'trixie', 2024100509, '', ''),
+(24, 'Pia Angellie De Belen', 'PiaDeBelen@gmail.com', 'pia', 0, '', '');
 
 -- --------------------------------------------------------
 
@@ -279,7 +367,18 @@ INSERT INTO `user_roles` (`RoleID`, `StudentID`, `AdminID`, `VisitorID`, `StaffI
 (10, 0, 10, 0, 0, 0),
 (11, 0, 0, 11, 0, 0),
 (12, 0, 0, 0, 12, 0),
-(13, 0, 0, 0, 0, 13);
+(13, 0, 0, 0, 0, 13),
+(14, 14, 0, 0, 0, 0),
+(15, 15, 0, 0, 0, 0),
+(16, 16, 0, 0, 0, 0),
+(17, 17, 0, 0, 0, 0),
+(18, 18, 0, 0, 0, 0),
+(19, 0, 19, 0, 0, 0),
+(20, 20, 0, 0, 0, 0),
+(21, 0, 21, 0, 0, 0),
+(22, 0, 0, 0, 22, 0),
+(23, 0, 0, 0, 0, 23),
+(24, 0, 0, 24, 0, 0);
 
 --
 -- Indexes for dumped tables
@@ -339,11 +438,10 @@ ALTER TABLE `course`
   ADD PRIMARY KEY (`CourseID`);
 
 --
--- Indexes for table `fine`
+-- Indexes for table `fines`
 --
-ALTER TABLE `fine`
-  ADD PRIMARY KEY (`FineID`),
-  ADD KEY `BorrowID` (`BorrowID`);
+ALTER TABLE `fines`
+  ADD PRIMARY KEY (`FineID`);
 
 --
 -- Indexes for table `materials`
@@ -362,6 +460,12 @@ ALTER TABLE `notifications`
 --
 ALTER TABLE `publisher`
   ADD PRIMARY KEY (`PublisherID`);
+
+--
+-- Indexes for table `reservations`
+--
+ALTER TABLE `reservations`
+  ADD PRIMARY KEY (`ReservationID`);
 
 --
 -- Indexes for table `user`
@@ -385,55 +489,73 @@ ALTER TABLE `user_roles`
 -- AUTO_INCREMENT for table `authors`
 --
 ALTER TABLE `authors`
-  MODIFY `AuthorID` int(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `AuthorID` int(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `books`
 --
 ALTER TABLE `books`
-  MODIFY `BookID` int(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `BookID` int(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT for table `book_archive`
 --
 ALTER TABLE `book_archive`
-  MODIFY `ArchiveID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `ArchiveID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+
+--
+-- AUTO_INCREMENT for table `borrow`
+--
+ALTER TABLE `borrow`
+  MODIFY `BorrowID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT for table `categories`
 --
 ALTER TABLE `categories`
-  MODIFY `CategoryID` int(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `CategoryID` int(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+
+--
+-- AUTO_INCREMENT for table `fines`
+--
+ALTER TABLE `fines`
+  MODIFY `FineID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT for table `materials`
 --
 ALTER TABLE `materials`
-  MODIFY `MaterialID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `MaterialID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
 -- AUTO_INCREMENT for table `notifications`
 --
 ALTER TABLE `notifications`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
 -- AUTO_INCREMENT for table `publisher`
 --
 ALTER TABLE `publisher`
-  MODIFY `PublisherID` int(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `PublisherID` int(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+
+--
+-- AUTO_INCREMENT for table `reservations`
+--
+ALTER TABLE `reservations`
+  MODIFY `ReservationID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `user`
 --
 ALTER TABLE `user`
-  MODIFY `RoleID` int(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
+  MODIFY `RoleID` int(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=25;
 
 --
 -- AUTO_INCREMENT for table `user_roles`
 --
 ALTER TABLE `user_roles`
-  MODIFY `RoleID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
+  MODIFY `RoleID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=25;
 
 --
 -- Constraints for dumped tables
