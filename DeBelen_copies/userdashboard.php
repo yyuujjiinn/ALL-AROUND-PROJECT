@@ -9,7 +9,16 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $uID = $_SESSION['user_id'];
-$uName = $_SESSION['user_name'];
+$uName = $_SESSION['user_name'] ?? '';
+
+if (empty($uName)) {
+    $nameQuery = $conn->query("SELECT FirstName, MiddleName, LastName FROM user WHERE RoleID = '$uID'");
+    if ($nameQuery && $nameQuery->num_rows > 0) {
+        $nameRow = $nameQuery->fetch_assoc();
+        $uName = trim($nameRow['FirstName'] . ' ' . (!empty($nameRow['MiddleName']) ? $nameRow['MiddleName'] . ' ' : '') . $nameRow['LastName']);
+        $_SESSION['user_name'] = $uName;
+    }
+}
 
 // Query fines ng current student (listahan ng fines)
 $fineQuery = $conn->query("SELECT f.FineID, f.Type, f.Amount, f.Status
@@ -292,4 +301,3 @@ function deleteAll() {
 
 </body>
 </html>
-
