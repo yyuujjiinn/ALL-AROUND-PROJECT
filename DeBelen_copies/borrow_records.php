@@ -33,7 +33,33 @@ if (isset($_GET['return_id'])) {
         $conn->query("INSERT INTO fines (BorrowID, Amount, Status, Type) VALUES ('$borrowID', '$amount', 'Unpaid', 'Late')");
     }
 
-    echo "<script>alert('Book marked as Returned!'); window.location='borrow_records.php';</script>";
+    // ==========================================================
+    // BAGONG DAGDAG: RESERVATION NOTIFICATION LOGIC
+    // ==========================================================
+    
+    // Hanapin ang pinaka-unang reservation na 'Pending' para sa librong ito
+    $checkRes = $conn->query("SELECT r.ReservationID, r.UserID, b.BookTitle 
+                              FROM reservations r 
+                              JOIN books b ON r.BookID = b.BookID 
+                              WHERE r.BookID = '$bookID' AND r.Status = 'Pending' 
+                              ORDER BY r.ReservationDate ASC LIMIT 1");
+
+    if ($checkRes->num_rows > 0) {
+        $resData = $checkRes->fetch_assoc();
+        $resID = $resData['ReservationID'];
+        $resUserID = $resData['UserID'];
+        $bookTitle = $resData['BookTitle'];
+
+        // 1. Mag-send ng notification sa user na nag-reserve
+        $notifMsg = "Good news! The book '" . mysqli_real_escape_string($conn, $bookTitle) . "' you reserved is now available. Please visit the library to borrow it.";
+        $conn->query("INSERT INTO notifications (UserID, Message, Status) VALUES ('$resUserID', '$notifMsg', 'Unread')");
+
+        // 2. I-update ang reservation status para hindi na siya ma-notify ulit
+        $conn->query("UPDATE reservations SET Status = 'Notified' WHERE ReservationID = '$resID'");
+    }
+    // ==========================================================
+
+    echo "<script>alert('Book marked as Returned! Notification sent to next in queue (if any).'); window.location='borrow_records.php';</script>";
     exit();
 }
 
@@ -57,11 +83,11 @@ if (isset($_GET['reject_id'])) {
 }
 
 // 4. Fetch all borrow records
-$sql = "SELECT b.BorrowID, u.Name AS UserName, bk.BookTitle, b.RequestDate, b.BorrowDate, b.DueDate, b.Status
+$sql = "SELECT b.BorrowID, CONCAT(u.firstname, ' ', u.middlename, ' ', u.lastname) AS UserName, bk.BookTitle, b.BorrowDate, b.DueDate, b.Status
         FROM borrow b
         JOIN user u ON b.UserID = u.RoleID
         JOIN books bk ON b.BookID = bk.BookID
-        ORDER BY b.RequestDate DESC";
+        ORDER BY b.BorrowDate DESC";
 $result = $conn->query($sql);
 ?>
 
@@ -95,9 +121,8 @@ th { background: #007bff; color: white; }
     <thead>
         <tr>
             <th>Borrow ID</th>
-            <th>User Name</th>
+            <th>Name</th>
             <th>Book Title</th>
-            <th>Request Date</th>
             <th>Borrow Date</th>
             <th>Due Date</th>
             <th>Status</th>
@@ -111,7 +136,6 @@ th { background: #007bff; color: white; }
                 <td><?= $row['BorrowID'] ?></td>
                 <td><?= htmlspecialchars($row['UserName']) ?></td>
                 <td><?= htmlspecialchars($row['BookTitle']) ?></td>
-                <td><?= $row['RequestDate'] ? date('M d, Y', strtotime($row['RequestDate'])) : '-' ?></td>
                 <td><?= $row['BorrowDate'] ? date('M d, Y', strtotime($row['BorrowDate'])) : '-' ?></td>
                 <td><?= $row['DueDate'] ? date('M d, Y', strtotime($row['DueDate'])) : '-' ?></td>
                 <td>
@@ -141,7 +165,7 @@ th { background: #007bff; color: white; }
             </tr>
             <?php endwhile; ?>
         <?php else: ?>
-            <tr><td colspan="8" style="text-align:center;">No borrowing records found.</td></tr>
+            <tr><td colspan="7" style="text-align:center;">No borrowing records found.</td></tr>
         <?php endif; ?>
     </tbody>
 </table>
